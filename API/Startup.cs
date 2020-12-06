@@ -2,7 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text;
 using API.Data;
+using API.Interfaces;
+using API.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -13,6 +17,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Microsoft.IdentityModel.Tokens;
+using API.Extensions;
 
 namespace API
 {
@@ -29,14 +35,16 @@ namespace API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
-            services.AddDbContext<DataContext>(options => {
-                options.UseSqlite(_config.GetConnectionString("DefaultConnection"));
-            });
+            // Extension Method for Application ...
+            services.AddApplicationServices(_config);
 
             services.AddControllers();
             services.AddCors(); // xxxxx
+            
+            // Extension Method for Authentication ...
+            services.AddIdentityServices(_config);
 
+            // default from Swagger
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
@@ -59,6 +67,9 @@ namespace API
 
             // xxxxx
             app.UseCors(xp => xp.AllowAnyHeader().AllowAnyMethod().WithOrigins("https://localhost:4200"));
+
+            // UseAuthentication should come before UseAuthorization
+            app.UseAuthentication(); 
 
             app.UseAuthorization();
 
